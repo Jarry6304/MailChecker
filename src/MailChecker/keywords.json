@@ -1,0 +1,45 @@
+{
+  "subjectAndBodyKeywords": [
+    "帳單", "繳費", "繳款", "應繳", "電子帳單", "信用卡帳單", "對帳單", "繳費通知",
+    "本期應繳", "繳費期限", "繳費截止", "扣繳", "請款", "應付", "帳款",
+    "電費", "水費", "瓦斯費", "天然氣", "電信費", "行動電話費", "市話費", "網路費",
+    "寬頻費", "有線電視費", "管理費", "停車費", "保險費", "貸款", "房貸", "車貸",
+    "稅金", "綜合所得稅", "牌照稅", "燃料稅", "地價稅", "房屋稅",
+    "invoice", "bill", "billing statement", "payment due", "amount due",
+    "statement of account", "subscription renewal", "auto-renewal",
+    "your receipt", "payment reminder", "past due"
+  ],
+  "senderAddressContains": [
+    "billing", "noreply", "no-reply", "no_reply", "donotreply", "do-not-reply",
+    "statement", "invoice", "ebill", "e-bill"
+  ],
+  "senderNameContains": [
+    "帳單", "電子帳單", "客服中心", "客戶服務"
+  ],
+  "senderDomains": [
+    "@bot.com.tw",
+    "@cathaybk.com.tw",
+    "@esunbank.com.tw",
+    "@taishinbank.com.tw",
+    "@ctbcbank.com",
+    "@megabank.com.tw",
+    "@firstbank.com.tw",
+    "@hncb.com.tw",
+    "@sinopac.com",
+    "@fubon.com",
+    "@taipower.com.tw",
+    "@water.gov.tw",
+    "@cpc.com.tw",
+    "@cht.com.tw",
+    "@chttl.com.tw",
+    "@fetnet.net",
+    "@tstartel.com",
+    "@aptg.com.tw",
+    "@so-net.net.tw",
+    "@hinet.net",
+    "@kbro.com.tw",
+    "@cns.net.tw",
+    "@mof.gov.tw",
+    "@etax.nat.gov.tw"
+  ]
+}
