@@ -141,7 +141,8 @@ public sealed class GraphService
             PlainBody: plain,
             ReceivedDateTime: msg.ReceivedDateTime,
             IsRead: msg.IsRead ?? false,
-            ParentFolderId: msg.ParentFolderId ?? "");
+            ParentFolderId: msg.ParentFolderId ?? "",
+            Labels: Array.Empty<string>());
     }
 
     private static string EscapeOData(string value) =>

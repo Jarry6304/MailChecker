@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace MailChecker.Services;
 
-public sealed class StateService
+public sealed class StateStore
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -13,11 +13,95 @@ public sealed class StateService
     };
 
     private readonly string _path;
-    private State _state;
+    private readonly StateFile _state;
 
-    private StateService(string path, State state)
+    private StateStore(string path, StateFile state)
     {
         _path = path;
+        _state = state;
+    }
+
+    public ProviderStateView ForProvider(string providerKey)
+    {
+        if (!_state.Providers.TryGetValue(providerKey, out var ps))
+        {
+            ps = new ProviderState();
+            _state.Providers[providerKey] = ps;
+        }
+        return new ProviderStateView(ps);
+    }
+
+    public async Task SaveAsync(CancellationToken ct = default)
+    {
+        _state.LastRunUtc = DateTimeOffset.UtcNow;
+
+        var dir = Path.GetDirectoryName(_path);
+        if (!string.IsNullOrWhiteSpace(dir))
+        {
+            Directory.CreateDirectory(dir);
+        }
+
+        await using var stream = File.Create(_path);
+        await JsonSerializer.SerializeAsync(stream, _state, JsonOptions, ct);
+    }
+
+    public static StateStore Load(string path)
+    {
+        if (!File.Exists(path))
+        {
+            return new StateStore(path, new StateFile());
+        }
+
+        using var stream = File.OpenRead(path);
+        using var doc = JsonDocument.Parse(stream);
+        var root = doc.RootElement;
+
+        StateFile loaded;
+        if (root.ValueKind == JsonValueKind.Object &&
+            root.TryGetProperty("providers", out _))
+        {
+            loaded = JsonSerializer.Deserialize<StateFile>(root.GetRawText(), JsonOptions)
+                     ?? new StateFile();
+        }
+        else
+        {
+            // Legacy single-provider format — migrate as the graph provider's state.
+            var legacy = JsonSerializer.Deserialize<ProviderState>(root.GetRawText(), JsonOptions)
+                         ?? new ProviderState();
+            loaded = new StateFile
+            {
+                LastRunUtc = legacy.LastRunUtc,
+                Providers = new Dictionary<string, ProviderState>
+                {
+                    ["graph"] = legacy
+                }
+            };
+        }
+
+        return new StateStore(path, loaded);
+    }
+
+    private sealed class StateFile
+    {
+        public DateTimeOffset? LastRunUtc { get; set; }
+        public Dictionary<string, ProviderState> Providers { get; set; } = new();
+    }
+
+    internal sealed class ProviderState
+    {
+        public bool FirstRunCompleted { get; set; }
+        public DateTimeOffset? LastReceivedDateTime { get; set; }
+        public DateTimeOffset? LastRunUtc { get; set; }
+        public HashSet<string> ProcessedMessageIds { get; set; } = new();
+    }
+}
+
+public sealed class ProviderStateView
+{
+    private readonly StateStore.ProviderState _state;
+
+    internal ProviderStateView(StateStore.ProviderState state)
+    {
         _state = state;
     }
 
@@ -41,39 +125,6 @@ public sealed class StateService
     public void CompleteFirstRun()
     {
         _state.FirstRunCompleted = true;
-    }
-
-    public async Task SaveAsync(CancellationToken ct = default)
-    {
         _state.LastRunUtc = DateTimeOffset.UtcNow;
-
-        var dir = Path.GetDirectoryName(_path);
-        if (!string.IsNullOrWhiteSpace(dir))
-        {
-            Directory.CreateDirectory(dir);
-        }
-
-        await using var stream = File.Create(_path);
-        await JsonSerializer.SerializeAsync(stream, _state, JsonOptions, ct);
-    }
-
-    public static StateService Load(string path)
-    {
-        if (!File.Exists(path))
-        {
-            return new StateService(path, new State());
-        }
-
-        using var stream = File.OpenRead(path);
-        var state = JsonSerializer.Deserialize<State>(stream, JsonOptions) ?? new State();
-        return new StateService(path, state);
-    }
-
-    private sealed class State
-    {
-        public bool FirstRunCompleted { get; set; }
-        public DateTimeOffset? LastReceivedDateTime { get; set; }
-        public DateTimeOffset? LastRunUtc { get; set; }
-        public HashSet<string> ProcessedMessageIds { get; set; } = new();
     }
 }
