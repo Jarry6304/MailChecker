@@ -72,7 +72,13 @@ static async Task RunAsync(CancellationToken ct)
     }
 
     var tasks = ready
-        .Select(p => ProcessProviderAsync(p, classifier, line, stateStore.ForProvider(p.ProviderKey), ct))
+        .Select(p => ProcessProviderAsync(
+            p,
+            classifier,
+            line,
+            stateStore.ForProvider(p.ProviderKey),
+            config.Line.NotificationMaxAgeDays,
+            ct))
         .ToList();
     var summaries = await Task.WhenAll(tasks);
 
@@ -109,6 +115,7 @@ static async Task<ProviderSummary> ProcessProviderAsync(
     ClassifierService classifier,
     LineMessagingService line,
     ProviderStateView state,
+    int notificationMaxAgeDays,
     CancellationToken ct)
 {
     var label = provider.DisplayName;
@@ -172,10 +179,19 @@ static async Task<ProviderSummary> ProcessProviderAsync(
         try
         {
             await provider.ProcessBillAsync(mail, ct);
-            await line.NotifyBillAsync(mail, ct);
+
+            if (IsRecentEnough(mail, notificationMaxAgeDays))
+            {
+                await line.NotifyBillAsync(mail, ct);
+                Log("   ✔ 已搬移、標為已讀、LINE 已通知");
+            }
+            else
+            {
+                Log($"   ✔ 已搬移、標為已讀；超過 {notificationMaxAgeDays} 天，不推播 LINE");
+            }
+
             state.MarkProcessed(mail.Id, mail.ReceivedDateTime);
             billCount++;
-            Log("   ✔ 已搬移、標為已讀、LINE 已通知");
         }
         catch (Exception ex)
         {
@@ -210,6 +226,21 @@ static AppConfig LoadConfig()
 static string ResolvePath(string path)
 {
     return Path.IsPathRooted(path) ? path : Path.Combine(AppContext.BaseDirectory, path);
+}
+
+static bool IsRecentEnough(MailItem mail, int maxAgeDays)
+{
+    if (maxAgeDays <= 0)
+    {
+        return true;
+    }
+
+    if (mail.ReceivedDateTime is not { } received)
+    {
+        return true;
+    }
+
+    return DateTimeOffset.UtcNow - received <= TimeSpan.FromDays(maxAgeDays);
 }
 
 internal sealed record ProviderSummary(string Provider, int BillCount, int SkippedCount, int ErrorCount);

@@ -420,6 +420,8 @@ FodyWeavers.xsd
 # MailChecker — local config & runtime state
 src/MailChecker/appsettings.json
 src/MailChecker/appsettings.local.json
+src/MailChecker/gmail-credentials.json
+gmail-credentials.json
 src/MailChecker/data/
 data/
 

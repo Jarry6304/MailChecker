@@ -45,6 +45,7 @@ public sealed class LineConfig
     public string ChannelAccessToken { get; set; } = "";
     public string UserId { get; set; } = "";
     public int BodyPreviewMaxChars { get; set; } = 400;
+    public int NotificationMaxAgeDays { get; set; } = 60;
 }
 
 public sealed class ClassifierConfig

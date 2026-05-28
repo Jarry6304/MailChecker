@@ -155,3 +155,4 @@ src/MailChecker/
 - 內文 HTML 會先去掉 `<script>` / `<style>` 區塊再轉純文字才丟給分類器或 LINE。
 - Channel access token、Azure AD client id、Google client secret 都不要寫進原始碼 — 用 `appsettings.json`（已被 gitignore）或環境變數。
 - Gmail OAuth scope 用 `gmail.modify`（可以讀信、加 label、標已讀，但**不能永久刪除**），降低風險。
+- `Line.NotificationMaxAgeDays`（預設 `60`）：超過天數的帳單只會搬資料夾 + 標已讀，**不會** LINE 推播；設成 `0` 或負數代表無上限（全部都推）。`ReceivedDateTime` 為 null 時視為新信，會推。
